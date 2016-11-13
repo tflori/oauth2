@@ -106,11 +106,10 @@ class AuthorizationRequestTest extends TestCase
 
     public function testStoresAuthToken()
     {
-        $this->storage->shouldReceive('set')->once()->with('authToken_abc123XYZ',
-            [
-                'client'  => $this->client,
-                'payload' => ['some' => 'data'],
-            ]);
+        $this->storage->shouldReceive('set')->once()->with('authToken_abc123XYZ', [
+            'client'  => $this->client,
+            'payload' => ['some' => 'data'],
+        ]);
 
         $token = $this->handler->generateAuthToken($this->client, ['some' => 'data']);
 
