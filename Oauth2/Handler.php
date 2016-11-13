@@ -65,7 +65,9 @@ class Handler
      */
     public function generateAuthToken(Interfaces\Client $client, $payload = [])
     {
-        $authCode = ($this->options[self::OPTION_TOKEN_CLASS])::generate();
+        /** @var Interfaces\Token $class */
+        $class = $this->options[self::OPTION_TOKEN_CLASS];
+        $authCode = $class::generate();
 
         $this->tokenStorage->set($this->options[self::OPTION_PREFIX_AUTH_TOKEN] . $authCode, [
             'client' => $client,
