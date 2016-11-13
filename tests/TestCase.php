@@ -12,7 +12,7 @@ use SecureToken\Token;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    /** @var Handler */
+    /** @var Handler|mock */
     protected $handler;
 
     /** @var User|Mock */
@@ -36,13 +36,12 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $this->client  = \Mockery::mock(Client::class, ['~^https://(www\.)?example\.com~'])->makePartial();
         $this->token   = \Mockery::mock(Token::class)->makePartial();
         $this->storage = \Mockery::mock(Storage::class)->makePartial();
-
-        $this->user->permit($this->client, ['basic']);
-
-        $this->handler = new Handler($this->storage, [
+        $this->handler = \Mockery::mock(Handler::class, [], [$this->storage, [
             Handler::OPTION_TOKEN_CLASS => $this->token
-        ]);
+        ]])->makePartial();
 
+        // prepare defaults
+        $this->user->permit($this->client, ['basic']);
         $this->token->shouldReceive('generate')->andReturn('abc123XYZ')->byDefault();
     }
 

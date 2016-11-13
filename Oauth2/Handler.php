@@ -6,8 +6,12 @@ use Oauth2\Interfaces;
 
 class Handler
 {
+    const STATUS_NEEDS_GRANT = 'needsGrant';
+    const STATUS_GRANTED = 'granted';
+
     const OPTION_TOKEN_CLASS = 'tokenClass';
     const OPTION_PREFIX_AUTH_TOKEN = 'prefixAuthToken';
+    const OPTION_PREFIX_SESSION_TOKENS = 'prefixSessionTokens';
 
     /** @var Interfaces\Storage */
     protected $tokenStorage;
@@ -15,7 +19,8 @@ class Handler
     /** @var array */
     protected $options = [
         self::OPTION_TOKEN_CLASS => 'SecureToken\Token',
-        self::OPTION_PREFIX_AUTH_TOKEN => 'authToken_'
+        self::OPTION_PREFIX_AUTH_TOKEN => 'authToken_',
+        self::OPTION_PREFIX_SESSION_TOKENS => 'sessionTokens_',
     ];
 
     /**
@@ -44,8 +49,12 @@ class Handler
      * @return bool
      * @throws Exception
      */
-    public function checkAuth(Interfaces\Client $client, Interfaces\User $user, $redirectUri, array $scopes = ['basic'])
-    {
+    public function checkAuth(
+        Interfaces\Client $client,
+        Interfaces\User $user,
+        $redirectUri,
+        array $scopes = ['basic']
+    ) {
         if (!$client->isValidRedirectUri($redirectUri)) {
             throw new Exception('Redirect URI is invalid');
         }
@@ -71,27 +80,67 @@ class Handler
 
         $this->tokenStorage->set($this->options[self::OPTION_PREFIX_AUTH_TOKEN] . $authCode, [
             'client' => $client,
-            'payload' => $payload
+            'payload' => $payload,
         ]);
 
         return $authCode;
     }
 
     /**
-     * Generate the URI for callback by given $redirectUri and $authCode.
+     * Generate the URI for callback by given $redirectUri and $authToken.
      *
      * @param string $redirectUri
-     * @param string $authCode
+     * @param string $authToken
      * @return string
      */
-    public function generateRedirectUri($redirectUri, $authCode)
+    public function generateRedirectUri($redirectUri, $authToken)
     {
         if (strpos($redirectUri, '%CODE%') !== false) {
-            return str_replace('%CODE%', $authCode, $redirectUri);
+            return str_replace('%CODE%', $authToken, $redirectUri);
         } elseif (strpos($redirectUri, '?') !== false) {
-            return str_replace('?', '?code=' . $authCode . '&', $redirectUri);
+            return str_replace('?', '?code=' . $authToken . '&', $redirectUri);
         } else {
-            return $redirectUri . '?code=' . $authCode;
+            return $redirectUri . '?code=' . $authToken;
         }
+    }
+
+    /**
+     * Handle the authorization request of a client.
+     *
+     * Returns an array with status and redirectUri if status is Granted.
+     *
+     * @param string $sessionId
+     * @param Interfaces\Client $client
+     * @param Interfaces\User $user
+     * @param $redirectUri
+     * @param array $scopes
+     * @return array
+     */
+    public function getAuthToken(
+        $sessionId,
+        Interfaces\Client $client,
+        Interfaces\User $user,
+        $redirectUri,
+        array $scopes = ['basic']
+    ) {
+        if ($this->checkAuth($client, $user, $redirectUri, $scopes)) {
+            $authToken = $this->generateAuthToken($client, [
+                'user' => $user,
+                'scope' => $scopes
+            ]);
+
+            $sessionStorageKey = $this->options[self::OPTION_PREFIX_SESSION_TOKENS] . $sessionId;
+            $this->tokenStorage->set(
+                $sessionStorageKey,
+                array_merge($this->tokenStorage->get($sessionStorageKey) ?: [], [$authToken])
+            );
+
+            return [
+                'status' => self::STATUS_GRANTED,
+                'redirectUri' => $this->generateRedirectUri($redirectUri, $authToken)
+            ];
+        }
+
+        return ['status' => self::STATUS_NEEDS_GRANT];
     }
 }
