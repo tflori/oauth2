@@ -53,7 +53,7 @@ Example:
 <?php
 
 // prepare minimal object set
-$handler = new Oauth2\Handler();
+$handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
 $client = new \Oauth2\Client('~^https://www\.example\.com~');
 $user = new \Oauth2\User();
 $user->permit($client, ['basic']);
@@ -61,14 +61,14 @@ $user->permit($client, ['basic']);
 // check if the user granted access and redirect_uri is valid
 if ($handler->checkAuth($client, $user, $_GET['redirect_uri'])) {
     // get the authCode
-    $authCode = $handler->getAuthToken($client, ['accountId' => 123, 'email' => 'john.doe@example.com']);
+    $authCode = $handler->generateAuthToken($client, ['accountId' => 123, 'email' => 'john.doe@example.com']);
     
     // send the browser to the callback
     header('Location: ' . $handler->generateRedirectUri($_GET['redirect_uri'], $authCode));
 }
 ```
 
-> todo: move this to cookbook 
+#### TODO move this to cookbook 
 
 Example controller for auth:
 ```php
@@ -112,7 +112,7 @@ $defineRoutes = function (FastRoute\RouteCollector $collector) {
             // the client is authenticated to get an auth token
             
             // obtain and store auth code
-            $authCode = $oauth2Handler->getAuthToken($client, $user);
+            $authCode = $oauth2Handler->generateAuthToken($client, $user);
             
             // when the user logout you may want to remove all tokens for this auth code - so store it
             // $session->set('authCodes', array_merge($session->get('authCodes', []), [$authCode])); 

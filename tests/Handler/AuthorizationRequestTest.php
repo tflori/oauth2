@@ -8,7 +8,8 @@ use Oauth2\Tests\TestCase;
 class AuthorizationRequestTest extends TestCase
 {
 
-    public function testInvalidRedirectUriThrows() {
+    public function testInvalidRedirectUriThrows()
+    {
         $this->client->shouldReceive('isValidRedirectUri')->once()->with('https://www.example.net/hacked');
 
         self::expectException(Exception::class);
@@ -22,7 +23,8 @@ class AuthorizationRequestTest extends TestCase
         );
     }
 
-    public function testNotPermittedClient() {
+    public function testNotPermittedClient()
+    {
         $this->user->shouldReceive('hasPermitted')->once()->with($this->client, ['basic'])
                    ->andReturn(false);
 
@@ -36,7 +38,8 @@ class AuthorizationRequestTest extends TestCase
         self::assertFalse($valid);
     }
 
-    public function testThrowsWhenClientNotPermitted() {
+    public function testThrowsWhenClientNotPermitted()
+    {
         $valid = $this->handler->checkAuth(
             $this->client,
             $this->user,
@@ -47,7 +50,8 @@ class AuthorizationRequestTest extends TestCase
         self::assertTrue($valid);
     }
 
-    public function redirectUriProvider() {
+    public function redirectUriProvider()
+    {
         return [
             [
                 'https://example.com/callback?auth=%CODE%',
@@ -73,7 +77,8 @@ class AuthorizationRequestTest extends TestCase
      * @param string $expectedUri
      * @param array $expectedQuery
      */
-    public function testReturnsRedirectUri($redirectUri, $expectedUri, $expectedQuery) {
+    public function testReturnsRedirectUri($redirectUri, $expectedUri, $expectedQuery)
+    {
         $result = $this->handler->generateRedirectUri(
             $redirectUri,
             'exampleCode'
@@ -85,8 +90,28 @@ class AuthorizationRequestTest extends TestCase
         self::assertEmpty(
             array_diff($expectedQuery, explode('&', $query)),
             'Failed asserting that ' . $query . ' contains '
-                . implode(', ', array_diff($expectedQuery, explode('&', $query))) . '.'
+            . implode(', ', array_diff($expectedQuery, explode('&', $query))) . '.'
         );
     }
 
+    public function testUsesTokenClass()
+    {
+        $this->token->shouldReceive('generate')->once()->andReturn('fakeToken');
+
+        $token = $this->handler->generateAuthToken($this->client, ['some' => 'data']);
+
+        self::assertSame('fakeToken', $token);
+    }
+
+    public function testStoresAuthToken()
+    {
+        $this->storage->shouldReceive('set')->once()->with('authToken_abc123XYZ', [
+            'client' => $this->client,
+            'payload' => ['some' => 'data']
+        ]);
+
+        $token = $this->handler->generateAuthToken($this->client, ['some' => 'data']);
+
+        self::assertSame('abc123XYZ', $token);
+    }
 }

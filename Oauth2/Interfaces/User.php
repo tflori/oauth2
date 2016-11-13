@@ -2,8 +2,8 @@
 
 namespace Oauth2\Interfaces;
 
-interface User {
-
+interface User
+{
     /**
      * Returns whether the user permitted the client access or not.
      *

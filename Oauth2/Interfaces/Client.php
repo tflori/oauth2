@@ -2,8 +2,8 @@
 
 namespace Oauth2\Interfaces;
 
-interface Client {
-
+interface Client
+{
     /**
      * Checks whether the $redirectUri is valid for this Client.
      *

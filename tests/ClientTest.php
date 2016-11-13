@@ -8,7 +8,8 @@ use PHPUnit\Framework\TestCase;
 
 class ClientTest extends TestCase
 {
-    public function testUsesRegularExpressions() {
+    public function testUsesRegularExpressions()
+    {
         $client = new Client('~^https://(www\.)?example\.com~');
 
         self::assertTrue($client->isValidRedirectUri('https://www.example.com'));

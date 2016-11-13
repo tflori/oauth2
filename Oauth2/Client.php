@@ -12,7 +12,8 @@ class Client implements Interfaces\Client
      *
      * @param string $redirectUriPattern A regular expression the redirect uri has to match against.
      */
-    public function __construct($redirectUriPattern) {
+    public function __construct($redirectUriPattern)
+    {
         $this->redirectUriPattern = $redirectUriPattern;
     }
 
@@ -22,7 +23,8 @@ class Client implements Interfaces\Client
      * @param string $redirectUri
      * @return bool
      */
-    public function isValidRedirectUri($redirectUri) {
+    public function isValidRedirectUri($redirectUri)
+    {
         return !!preg_match($this->redirectUriPattern, $redirectUri);
     }
 }
