@@ -1,5 +1,8 @@
 # tflori/oauth2
 
+[![Build Status](https://travis-ci.org/tflori/oauth2.svg?branch=master)](https://travis-ci.org/tflori/oauth2)
+[![Coverage Status](https://coveralls.io/repos/github/tflori/oauth2/badge.svg?branch=master)](https://coveralls.io/github/tflori/oauth2?branch=master)
+
 This library helps you to create a oauth service with oauth2 three legged authentication mechanism.
 
 Currently the only supported flow is "implicit" with refresh token:
