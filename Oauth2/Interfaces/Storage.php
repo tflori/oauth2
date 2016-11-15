@@ -20,4 +20,11 @@ interface Storage
      * @param int    $ttl Time to live in seconds (null = default; 0 = forever)
      */
     public function save($key, $value, $ttl = null);
+
+    /**
+     * Removes $key from the storage.
+     *
+     * @param $key
+     */
+    public function delete($key);
 }

@@ -211,6 +211,8 @@ class Handler
             0
         );
 
+        $this->tokenStorage->delete($this->options[self::OPTION_PREFIX_AUTH_TOKEN] . $authToken);
+
         return [
             'access_token'  => $accessToken,
             'expires_in'    => $this->options[self::OPTION_LIFETIME_ACCESS_TOKEN],

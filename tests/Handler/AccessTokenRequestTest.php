@@ -103,4 +103,12 @@ class AccessTokenRequestTest extends TestCase
 
         $this->handler->getAccessToken($this->clientId, $this->clientSecret, $this->authToken);
     }
+
+    public function testRemovesTheAuthCodeFromStorage()
+    {
+        $this->storage->shouldReceive('delete')->once()
+                      ->with('authToken_' . $this->authToken);
+
+        $this->handler->getAccessToken($this->clientId, $this->clientSecret, $this->authToken);
+    }
 }

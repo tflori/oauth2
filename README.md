@@ -37,6 +37,19 @@ Currently the only supported flow is "implicit" with refresh token:
 
 This is described here: https://tools.ietf.org/html/rfc6749#section-4.1
 
+## Security
+
+How secure is oauth2 and why? The main problem is storing the secret of the client. How ever you implement it to an app
+running on users end: your can reverse engineer the app to get the secret. The only way of making it secure is to store
+the secret on a service that gets the authorization code and asks the authorization service for the access code.
+ 
+Is it save then? No. Every app can ask your service. You know a way how to accomplish that the request is really from
+your app? Great: send suggestions to thflori@gmail.com.
+
+The main idea behind oauth is not to ensure the app is really the app it tells to be. The only thing we can proof is: 
+the user is really the user that has the password and user identification (or how ever the authentication works in
+your implementation).
+
 ## Usage
 
 ### Setup
@@ -47,9 +60,11 @@ In the examples we will use nikic/fast-route for routing and tflori/dependency-i
 you can use any other router and dependency injector.
 
 
-### (A) Obtain an authorization code
+### Obtain an authorization code (A over B to C)
 
-The authorization code gives enables the client to get an access token (and refresh token).
+The authorization code enables the client to get an access token (and refresh token). The client sends the user
+to the authorization server. If the user is logged in already (usually by cookies) he sends the user back to the
+callback providing the authorization code.
 
 Example:
 ```php
@@ -57,7 +72,7 @@ Example:
 
 // prepare minimal object set
 $handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
-$client = new \Oauth2\Client('~^https://www\.example\.com~');
+$client = new \Oauth2\Client(1, '~^https://www\.example\.com~', 'my-long-secret');
 $user = new \Oauth2\User();
 $user->permit($client, ['basic']);
 
@@ -71,66 +86,21 @@ if ($handler->checkAuth($client, $user, $_GET['redirect_uri'])) {
 }
 ```
 
-#### TODO move this to cookbook 
+### Obtain an access token (D to E)
 
-Example controller for auth:
+With access token the client can access the data. To get an access token the client needs to provide the client id,
+the client secret and the previously generated authorization code. 
+
+Example:
 ```php
 <?php
 
-DI::set('oauth2Handler', function() {
-    return new Oauth2\Handler();
-});
+// prepare minimal object set
+$handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
 
-$defineRoutes = function (FastRoute\RouteCollector $collector) {
+$result = $handler->getAccessToken($_GET['client_id'], $_GET['client_secret'], $_GET['code']);
 
-    $collector->addRoute('GET', '/auth/grant', function() {
-    
-        // do whatever you need to login and obtaing a already logged in user (session?)
-        
-        // here is a static user example (not recommended)
-        $user = new Oauth2\User();
-        
-        // you can obtain your client anywhere. Here is a doctrine example:
-        // $client = DI::get('entityManager')->find('Client', $_GET['client_id']);
-        
-        // here we using a static client (it is the only available client)
-        $client = new \Oauth2\Client('~^http://www\.example\.com');
-        
-        /** @var \Oauth2\Handler $oauth2Handler */
-        $oauth2Handler = DI::get('oauth2Handler');
-        
-        $redirectUri = $_GET['redirect_uri'];
-        $scopes = ['basic'];
-        if (!empty($_GET['scope'])) {
-            $scopes = array_merge($scopes, explode(',', $_GET['scope']));
-        }
-        
-        try {
-        
-            if (!$oauth2Handler->checkAuth($client, $user, $redirectUri, $scopes)) {
-                // this means that the user has not granted access to the client (should he? how? - up to you)
-                return; 
-            }
-            
-            // the client is authenticated to get an auth token
-            
-            // obtain and store auth code
-            $authCode = $oauth2Handler->generateAuthToken($client, $user);
-            
-            // when the user logout you may want to remove all tokens for this auth code - so store it
-            // $session->set('authCodes', array_merge($session->get('authCodes', []), [$authCode])); 
-            
-            // send the browser to the callback
-            header('Location: ' . $oauth2Handler->generateRedirectUri($redirectUri, $authCode));
-            
-        } catch(Oauth2\Exception $e) {
-        
-            // the redirect uri is invalid maybe someone wants to hack? or DOS?
-            die($e->getMessage()); // Redirect URI is invalid
-            
-        }
-        
-    });
-    
-};
+// send the data somehow
+header('Content-Type: application/json');
+echo json_encode($result);
 ```

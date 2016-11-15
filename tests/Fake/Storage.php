@@ -12,4 +12,8 @@ class Storage implements \Oauth2\Interfaces\Storage
     public function save($key, $value, $ttl = null)
     {
     }
+
+    public function delete($key)
+    {
+    }
 }
