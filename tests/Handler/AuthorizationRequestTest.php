@@ -106,10 +106,10 @@ class AuthorizationRequestTest extends TestCase
 
     public function testStoresAuthToken()
     {
-        $this->storage->shouldReceive('set')->once()->with('authToken_abc123XYZ', [
+        $this->storage->shouldReceive('save')->once()->with('authToken_abc123XYZ', [
             'client'  => $this->client,
             'payload' => ['some' => 'data'],
-        ]);
+        ], 10);
 
         $token = $this->handler->generateAuthToken($this->client, ['some' => 'data']);
 
@@ -165,8 +165,8 @@ class AuthorizationRequestTest extends TestCase
         $this->handler->shouldReceive('generateAuthToken')->once()
                       ->with($this->client, ['user' => $this->user, 'scope' => ['basic']])
                       ->andReturn('ABC123xyz');
-        $this->storage->shouldReceive('set')->once()
-                      ->with('sessionTokens_' . $sessionId, ['abc123XYZ', 'ABC123xyz']);
+        $this->storage->shouldReceive('save')->once()
+                      ->with('sessionTokens_' . $sessionId, ['abc123XYZ', 'ABC123xyz'], 0);
         $this->storage->shouldReceive('get')->once()
                       ->with('sessionTokens_' . $sessionId)
                       ->andReturn(['abc123XYZ']);

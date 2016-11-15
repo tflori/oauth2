@@ -4,15 +4,12 @@ namespace Oauth2\Tests\Fake;
 
 class Storage implements \Oauth2\Interfaces\Storage
 {
-    protected $storage = [];
-
     public function get($key)
     {
-        return @$this->storage[$key] ?: null;
+        return null;
     }
 
-    public function set($key, $value)
+    public function save($key, $value, $ttl = null)
     {
-        return $this->storage[$key] = $value;
     }
 }

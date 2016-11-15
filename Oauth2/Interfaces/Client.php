@@ -11,4 +11,8 @@ interface Client
      * @return bool
      */
     public function isValidRedirectUri($redirectUri);
+
+    public function getSecret();
+
+    public function getId();
 }

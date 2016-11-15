@@ -4,7 +4,6 @@ namespace Oauth2\Tests;
 
 use Mockery\Mock;
 use Oauth2\Handler;
-use Oauth2\Interfaces;
 use Oauth2\Client;
 use Oauth2\Tests\Fake\Storage;
 use Oauth2\User;
@@ -33,12 +32,19 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         // create mocks
         $this->user    = \Mockery::mock(User::class)->makePartial();
-        $this->client  = \Mockery::mock(Client::class, ['~^https://(www\.)?example\.com~'])->makePartial();
         $this->token   = \Mockery::mock(Token::class)->makePartial();
         $this->storage = \Mockery::mock(Storage::class)->makePartial();
-        $this->handler = \Mockery::mock(Handler::class, [], [$this->storage, [
-            Handler::OPTION_TOKEN_CLASS => $this->token
-        ]])->makePartial();
+        $this->client  = \Mockery::mock(Client::class, [
+            'example',
+            '~^https://(www\.)?example\.com~',
+            'fooBar'
+        ])->makePartial();
+        $this->handler = \Mockery::mock(Handler::class, [
+            $this->storage,
+            [
+                Handler::OPTION_TOKEN_CLASS => $this->token
+            ]
+        ])->makePartial();
 
         // prepare defaults
         $this->user->permit($this->client, ['basic']);

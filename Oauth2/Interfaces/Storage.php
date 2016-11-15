@@ -16,7 +16,8 @@ interface Storage
      * Store $value in the storage under $key.
      *
      * @param string $key
-     * @param mixed $value
+     * @param mixed  $value
+     * @param int    $ttl Time to live in seconds (null = default; 0 = forever)
      */
-    public function set($key, $value);
+    public function save($key, $value, $ttl = null);
 }

@@ -10,7 +10,7 @@ class ClientTest extends TestCase
 {
     public function testUsesRegularExpressions()
     {
-        $client = new Client('~^https://(www\.)?example\.com~');
+        $client = new Client('example', '~^https://(www\.)?example\.com~', 'fooBar');
 
         self::assertTrue($client->isValidRedirectUri('https://www.example.com'));
         self::assertFalse($client->isValidRedirectUri('http://example.net/hacked'));

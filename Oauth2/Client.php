@@ -7,14 +7,24 @@ class Client implements Interfaces\Client
     /** @var string */
     protected $redirectUriPattern;
 
+    /** @var string */
+    protected $secret;
+
+    /** @var string|int */
+    protected $id;
+
     /**
      * Client constructor.
      *
-     * @param string $redirectUriPattern A regular expression the redirect uri has to match against.
+     * @param string|int $id
+     * @param string     $redirectUriPattern A regular expression the redirect uri has to match against.
+     * @param string     $secret
      */
-    public function __construct($redirectUriPattern)
+    public function __construct($id, $redirectUriPattern, $secret)
     {
+        $this->id = $id;
         $this->redirectUriPattern = $redirectUriPattern;
+        $this->secret = $secret;
     }
 
     /**
@@ -26,5 +36,15 @@ class Client implements Interfaces\Client
     public function isValidRedirectUri($redirectUri)
     {
         return !!preg_match($this->redirectUriPattern, $redirectUri);
+    }
+
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function getSecret()
+    {
+        return $this->secret;
     }
 }
