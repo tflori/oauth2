@@ -47,75 +47,6 @@ class Handler
         $this->options      = array_merge($this->options, $options ?: []);
     }
 
-
-    /**
-     * Check authentication of Client to obtain an auth Token.
-     *
-     * You should run this before generating token. It is not needed, but it holds all logic to check
-     * if client is granted to get an auth token.
-     *
-     * @param Interfaces\Client $client
-     * @param Interfaces\User $user
-     * @param string $redirectUri
-     * @param string[] $scopes
-     * @return bool
-     * @throws Exception
-     */
-    public function checkAuth(
-        Interfaces\Client $client,
-        Interfaces\User $user,
-        $redirectUri,
-        array $scopes = ['basic']
-    ) {
-        if (!$client->isValidRedirectUri($redirectUri)) {
-            throw new Exception('Redirect URI is invalid');
-        }
-
-        return $user->hasPermitted($client, $scopes);
-    }
-
-    /**
-     * Generate an authorization for $client and store it with $payload.
-     *
-     * We recommend to store Information about the user in $payload and to store the returned $authToken
-     * to revoke all authorizations when user logs out.
-     *
-     * @param Interfaces\Client $client
-     * @param mixed $payload
-     * @return string
-     */
-    public function generateAuthToken(Interfaces\Client $client, $payload = [])
-    {
-        /** @var Interfaces\Token $class */
-        $class     = $this->options[self::OPTION_TOKEN_CLASS];
-        $authToken = $class::generate();
-
-        $this->tokenStorage->save($this->options[self::OPTION_PREFIX_AUTH_TOKEN] . $authToken, [
-            'client'  => $client,
-            'payload' => $payload,
-        ], $this->options[self::OPTION_LIFETIME_AUTH_TOKEN]);
-
-        return $authToken;
-    }
-
-    /**
-     * Generate the URI for callback by given $redirectUri and $authToken.
-     *
-     * @param string $redirectUri
-     * @param string $authToken
-     * @return string
-     */
-    public function generateRedirectUri($redirectUri, $authToken)
-    {
-        if (strpos($redirectUri, '%CODE%') !== false) {
-            return str_replace('%CODE%', $authToken, $redirectUri);
-        } elseif (strpos($redirectUri, '?') !== false) {
-            return str_replace('?', '?code=' . $authToken . '&', $redirectUri);
-        } else {
-            return $redirectUri . '?code=' . $authToken;
-        }
-    }
-
     /**
      * Handle the authorization request of a client.
      *
@@ -127,6 +58,7 @@ class Handler
      * @param $redirectUri
      * @param array $scopes
      * @return array
+     * @throws Exception
      */
     public function getAuthToken(
         $sessionId,
@@ -135,11 +67,23 @@ class Handler
         $redirectUri,
         array $scopes = ['basic']
     ) {
-        if ($this->checkAuth($client, $user, $redirectUri, $scopes)) {
-            $authToken = $this->generateAuthToken($client, [
-                'user'  => $user,
-                'scopes' => $scopes
-            ]);
+
+        if (!$client->isValidRedirectUri($redirectUri)) {
+            throw new Exception('Redirect URI is invalid');
+        }
+
+        if ($user->hasPermitted($client, $scopes)) {
+            /** @var Interfaces\Token $class */
+            $class     = $this->options[self::OPTION_TOKEN_CLASS];
+            $authToken = $class::generate();
+
+            $this->tokenStorage->save($this->options[self::OPTION_PREFIX_AUTH_TOKEN] . $authToken, [
+                'client'  => $client,
+                'payload' => [
+                    'user'  => $user,
+                    'scopes' => $scopes
+                ],
+            ], $this->options[self::OPTION_LIFETIME_AUTH_TOKEN]);
 
             $sessionStorageKey = $this->options[self::OPTION_PREFIX_SESSION_TOKENS] . $sessionId;
             $this->tokenStorage->save(
@@ -148,9 +92,17 @@ class Handler
                 0
             );
 
+            if (strpos($redirectUri, '%CODE%') !== false) {
+                $redirectUri = str_replace('%CODE%', $authToken, $redirectUri);
+            } elseif (strpos($redirectUri, '?') !== false) {
+                $redirectUri = str_replace('?', '?code=' . $authToken . '&', $redirectUri);
+            } else {
+                $redirectUri = $redirectUri . '?code=' . $authToken;
+            }
+
             return [
                 'status'      => self::STATUS_GRANTED,
-                'redirectUri' => $this->generateRedirectUri($redirectUri, $authToken)
+                'redirectUri' => $redirectUri
             ];
         }
 
