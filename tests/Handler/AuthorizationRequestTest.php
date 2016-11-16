@@ -138,7 +138,7 @@ class AuthorizationRequestTest extends TestCase
         $redirectUri       = 'https://example.com/cb';
         $redirectUriResult = 'https://example.com/cb?grant=ABC123xyz';
         $this->handler->shouldReceive('generateAuthToken')->once()
-                      ->with($this->client, ['user' => $this->user, 'scope' => ['basic']])
+                      ->with($this->client, ['user' => $this->user, 'scopes' => ['basic']])
                       ->andReturn('ABC123xyz');
         $this->handler->shouldReceive('generateRedirectUri')->once()
                       ->with($redirectUri, 'ABC123xyz')
@@ -163,7 +163,7 @@ class AuthorizationRequestTest extends TestCase
         $sessionId   = str_repeat('f', 32);
 
         $this->handler->shouldReceive('generateAuthToken')->once()
-                      ->with($this->client, ['user' => $this->user, 'scope' => ['basic']])
+                      ->with($this->client, ['user' => $this->user, 'scopes' => ['basic']])
                       ->andReturn('ABC123xyz');
         $this->storage->shouldReceive('save')->once()
                       ->with('sessionTokens_' . $sessionId, ['abc123XYZ', 'ABC123xyz'], 0);

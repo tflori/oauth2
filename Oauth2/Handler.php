@@ -138,7 +138,7 @@ class Handler
         if ($this->checkAuth($client, $user, $redirectUri, $scopes)) {
             $authToken = $this->generateAuthToken($client, [
                 'user'  => $user,
-                'scope' => $scopes
+                'scopes' => $scopes
             ]);
 
             $sessionStorageKey = $this->options[self::OPTION_PREFIX_SESSION_TOKENS] . $sessionId;
@@ -155,6 +155,56 @@ class Handler
         }
 
         return ['status' => self::STATUS_NEEDS_GRANT];
+    }
+
+    protected function checkClient(Interfaces\Client $client, $clientId, $clientSecret)
+    {
+        if ($clientId !== $client->getId()) {
+            throw new Exception('Client id is invalid');
+        }
+
+        if ($clientSecret !== $client->getSecret()) {
+            throw new Exception('Client secret is invalid');
+        }
+    }
+
+    protected function generateAccessToken(Interfaces\Client $client, $payload, $authToken)
+    {
+        /** @var Interfaces\Token $class */
+        $class        = $this->options[self::OPTION_TOKEN_CLASS];
+        $accessToken  = $class::generate();
+        $refreshToken = $class::generate();
+
+        $this->tokenStorage->save(
+            $this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $accessToken,
+            $payload,
+            $this->options[self::OPTION_LIFETIME_ACCESS_TOKEN]
+        );
+
+        $this->tokenStorage->save(
+            $this->options[self::OPTION_PREFIX_REFRESH_TOKEN] . $refreshToken,
+            [
+                'client' => $client,
+                'payload' => $payload,
+                'authToken' => $authToken
+            ],
+            $this->options[self::OPTION_LIFETIME_REFRESH_TOKEN]
+        );
+
+        $this->tokenStorage->save(
+            $this->options[self::OPTION_PREFIX_TOKENS] . $authToken,
+            [
+                'accessToken'  => $accessToken,
+                'refreshToken' => $refreshToken
+            ],
+            0
+        );
+
+        return [
+            'access_token'  => $accessToken,
+            'expires_in'    => $this->options[self::OPTION_LIFETIME_ACCESS_TOKEN],
+            'refresh_token' => $refreshToken
+        ];
     }
 
     /**
@@ -177,46 +227,34 @@ class Handler
         /** @var Interfaces\Client $client */
         $client = $authData['client'];
 
-        if ($clientId !== $client->getId()) {
-            throw new Exception('Client id is invalid');
-        }
-
-        if ($clientSecret !== $client->getSecret()) {
-            throw new Exception('Client secret is invalid');
-        }
-
-        /** @var Interfaces\Token $class */
-        $class        = $this->options[self::OPTION_TOKEN_CLASS];
-        $accessToken  = $class::generate();
-        $refreshToken = $class::generate();
-
-        $this->tokenStorage->save(
-            $this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $accessToken,
-            $authData['payload'],
-            $this->options[self::OPTION_LIFETIME_ACCESS_TOKEN]
-        );
-
-        $this->tokenStorage->save(
-            $this->options[self::OPTION_PREFIX_REFRESH_TOKEN] . $refreshToken,
-            $authData,
-            $this->options[self::OPTION_LIFETIME_REFRESH_TOKEN]
-        );
-
-        $this->tokenStorage->save(
-            $this->options[self::OPTION_PREFIX_TOKENS] . $authToken,
-            [
-                'accessToken'  => $accessToken,
-                'refreshToken' => $refreshToken
-            ],
-            0
-        );
+        $this->checkClient($client, $clientId, $clientSecret);
 
         $this->tokenStorage->delete($this->options[self::OPTION_PREFIX_AUTH_TOKEN] . $authToken);
 
-        return [
-            'access_token'  => $accessToken,
-            'expires_in'    => $this->options[self::OPTION_LIFETIME_ACCESS_TOKEN],
-            'refresh_token' => $refreshToken
-        ];
+        return $this->generateAccessToken($client, $authData['payload'], $authToken);
+    }
+
+    public function refreshAccessToken($clientId, $clientSecret, $refreshToken)
+    {
+        $authData = $this->tokenStorage->get($this->options[self::OPTION_PREFIX_REFRESH_TOKEN] . $refreshToken);
+
+        if (!$authData) {
+            throw new Exception('Refresh token is invalid');
+        }
+
+        /** @var Interfaces\Client $client */
+        $client = $authData['client'];
+
+        $this->checkClient($client, $clientId, $clientSecret);
+
+        $previousTokens = $this->tokenStorage->get($this->options[self::OPTION_PREFIX_TOKENS] . $authData['authToken']);
+        $this->tokenStorage->delete(
+            $this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $previousTokens['accessToken']
+        );
+        $this->tokenStorage->delete(
+            $this->options[self::OPTION_PREFIX_REFRESH_TOKEN] . $previousTokens['refreshToken']
+        );
+
+        return $this->generateAccessToken($client, $authData['payload'], $authData['authToken']);
     }
 }

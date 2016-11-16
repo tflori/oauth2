@@ -10,16 +10,19 @@ class AccessTokenRequestTest extends TestCase
     private $clientId     = 'example';
     private $clientSecret = 'fooBar';
     private $authToken    = 'abc123XYZ';
+    private $payload;
 
     protected function setUp()
     {
         parent::setUp();
 
+        $this->payload = ['user' => $this->user, 'scopes' => ['basic']];
+
         $this->storage->shouldReceive('get')
                       ->with('authToken_' . $this->authToken)
                       ->andReturn([
                           'client'  => $this->client,
-                          'payload' => ['user' => $this->user, 'scope' => ['basic']]
+                          'payload' => $this->payload
                       ])->byDefault();
 
         $this->token->shouldReceive('generate')->with()
@@ -77,17 +80,18 @@ class AccessTokenRequestTest extends TestCase
     public function testStoresPayloadForAccessToken()
     {
         $this->storage->shouldReceive('save')->once()
-            ->with('accessToken_XYZ321abc', ['user' => $this->user, 'scope' => ['basic']], 300);
+            ->with('accessToken_XYZ321abc', $this->payload, 300);
 
         $this->handler->getAccessToken($this->clientId, $this->clientSecret, $this->authToken);
     }
 
-    public function testStoresClientAndPayloadForRefreshToken()
+    public function testStoresRefreshToken()
     {
         $this->storage->shouldReceive('save')->once()
                       ->with('refreshToken_ABC123xyz', [
                           'client' => $this->client,
-                          'payload' => ['user' => $this->user, 'scope' => ['basic']]
+                          'payload' => $this->payload,
+                          'authToken' => $this->authToken
                       ], 3600);
 
         $this->handler->getAccessToken($this->clientId, $this->clientSecret, $this->authToken);
@@ -96,7 +100,7 @@ class AccessTokenRequestTest extends TestCase
     public function testStoresTokensForAuthToken()
     {
         $this->storage->shouldReceive('save')->once()
-                      ->with('tokens_abc123XYZ', [
+                      ->with('tokens_' . $this->authToken, [
                           'accessToken' => 'XYZ321abc',
                           'refreshToken' => 'ABC123xyz'
                       ], 0);
