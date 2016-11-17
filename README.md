@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/tflori/oauth2.svg?branch=master)](https://travis-ci.org/tflori/oauth2)
 [![Coverage Status](https://coveralls.io/repos/github/tflori/oauth2/badge.svg?branch=master)](https://coveralls.io/github/tflori/oauth2?branch=master)
 
-This library helps you to create a oauth service with oauth2 three legged authentication mechanism.
+This library helps you to create an oauth service with oauth2 three legged authentication mechanism.
 
 Currently the only supported flow is "implicit" with refresh token:
 
@@ -70,19 +70,14 @@ Example:
 ```php
 <?php
 
-// prepare minimal object set
 $handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
-$client = new \Oauth2\Client(1, '~^https://www\.example\.com~', 'my-long-secret');
-$user = new \Oauth2\User();
+$client = new Oauth2\Client(1, '~^https://www\.example\.com~', 'my-long-secret');
+$user = new Oauth2\User();
 $user->permit($client, ['basic']);
 
-// check if the user granted access and redirect_uri is valid
-if ($handler->checkAuth($client, $user, $_GET['redirect_uri'])) {
-    // get the authCode
-    $authCode = $handler->generateAuthToken($client, ['accountId' => 123, 'email' => 'john.doe@example.com']);
-    
-    // send the browser to the callback
-    header('Location: ' . $handler->generateRedirectUri($_GET['redirect_uri'], $authCode));
+$result = $handler->getAuthToken($_SESSION['oauthId'], $client, $user, $_GET['redirect_uri']);
+if ($result['status'] == OAuth2\Handler::STATUS_GRANTED) {
+    header('Location: ' . $result['redirectUri']);
 }
 ```
 
@@ -95,12 +90,52 @@ Example:
 ```php
 <?php
 
-// prepare minimal object set
 $handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
 
 $result = $handler->getAccessToken($_GET['client_id'], $_GET['client_secret'], $_GET['code']);
-
-// send the data somehow
 header('Content-Type: application/json');
 echo json_encode($result);
+```
+
+### Check authorization
+
+When the client request a resource it sends the access token in header 
+(usually: `Authorization: Bearer <access_token>`). The resource server has to check if this access token is valid.
+
+There are two possible scenarios:
+
+#### Resource Server on the same server
+
+When the resource server runs on the same server you can just create a Handler and aks him:
+```php
+<?php
+
+$handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
+
+$accessToken = substr($_SERVER['HTTP_AUTHORIZATION'], strrpos($_SERVER['HTTP_AUTHORIZATION'], ' '));
+if ($user = $handler->getUser($accessToken)) {
+    // request the resource and send him data
+} else {
+    header('HTTP/1.1 403 Forbidden');
+}
+```
+
+#### Resource Server on another server
+
+In this case you need to send a request to the authorization server:
+```php
+<?php
+
+$accessToken = substr($_SERVER['HTTP_AUTHORIZATION'], strrpos($_SERVER['HTTP_AUTHORIZATION'], ' '));
+$result = json_decode(file_get_contents('https://auth.example.com/validate.php?access_token=' . $accessToken));
+```
+
+And on the Authorisation Server run the same as before:
+```php
+<?php
+
+$handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
+
+header('Content-Type: application/json');
+echo json_encode($handler->getUser($_GET['access_token']));
 ```

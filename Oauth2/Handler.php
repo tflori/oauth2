@@ -55,7 +55,7 @@ class Handler
      * @param string $sessionId
      * @param Interfaces\Client $client
      * @param Interfaces\User $user
-     * @param $redirectUri
+     * @param string $redirectUri
      * @param array $scopes
      * @return array
      * @throws Exception
@@ -109,6 +109,14 @@ class Handler
         return ['status' => self::STATUS_NEEDS_GRANT];
     }
 
+    /**
+     * Checks the client credentials
+     *
+     * @param Interfaces\Client $client
+     * @param string|int $clientId
+     * @param string $clientSecret
+     * @throws Exception
+     */
     protected function checkClient(Interfaces\Client $client, $clientId, $clientSecret)
     {
         if ($clientId !== $client->getId()) {
@@ -120,6 +128,14 @@ class Handler
         }
     }
 
+    /**
+     * Generate access and refresh token and store to storage.
+     *
+     * @param Interfaces\Client $client
+     * @param mixed $payload
+     * @param string $authToken
+     * @return array
+     */
     protected function generateAccessToken(Interfaces\Client $client, $payload, $authToken)
     {
         /** @var Interfaces\Token $class */
@@ -160,7 +176,7 @@ class Handler
     }
 
     /**
-     * Check validity of $authToken and return an array that should be send back to the client.
+     * Check validity of $authToken and return an array containing the tokens.
      *
      * @param string $clientId
      * @param string $clientSecret
@@ -186,6 +202,15 @@ class Handler
         return $this->generateAccessToken($client, $authData['payload'], $authToken);
     }
 
+    /**
+     * Check validity of $refreshToken and return an array containing the tokens.
+     *
+     * @param string $clientId
+     * @param string $clientSecret
+     * @param string $refreshToken
+     * @return array
+     * @throws Exception
+     */
     public function refreshAccessToken($clientId, $clientSecret, $refreshToken)
     {
         $authData = $this->tokenStorage->get($this->options[self::OPTION_PREFIX_REFRESH_TOKEN] . $refreshToken);
@@ -208,5 +233,17 @@ class Handler
         );
 
         return $this->generateAccessToken($client, $authData['payload'], $authData['authToken']);
+    }
+
+    /**
+     * @param $accessToken
+     * @param string $scope
+     * @return Interfaces\User|null
+     */
+    public function getUser($accessToken, $scope = 'basic')
+    {
+        $payload = $this->tokenStorage->get($this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $accessToken);
+
+        return $payload && in_array($scope, $payload['scopes']) ? $payload['user'] : null;
     }
 }
