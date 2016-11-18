@@ -57,6 +57,7 @@ class Handler
      * @param Interfaces\User $user
      * @param string $redirectUri
      * @param array $scopes
+     * @param string $state
      * @return array
      * @throws Exception
      */
@@ -65,7 +66,8 @@ class Handler
         Interfaces\Client $client,
         Interfaces\User $user,
         $redirectUri,
-        array $scopes = ['basic']
+        array $scopes = ['basic'],
+        $state = ''
     ) {
 
         if (!$client->isValidRedirectUri($redirectUri)) {
@@ -95,9 +97,19 @@ class Handler
             if (strpos($redirectUri, '%CODE%') !== false) {
                 $redirectUri = str_replace('%CODE%', $authToken, $redirectUri);
             } elseif (strpos($redirectUri, '?') !== false) {
-                $redirectUri = str_replace('?', '?code=' . $authToken . '&', $redirectUri);
+                $redirectUri = preg_replace('/\?/', '?code=' . $authToken . '&', $redirectUri, 1);
             } else {
-                $redirectUri = $redirectUri . '?code=' . $authToken;
+                $redirectUri .= '?code=' . $authToken;
+            }
+
+            if (!empty($state)) {
+                if (strpos($redirectUri, '%STATE%') !== false) {
+                    $redirectUri = str_replace('%STATE%', $state, $redirectUri);
+                } elseif (strpos($redirectUri, '?') !== false) {
+                    $redirectUri = preg_replace('/\?/', '?state=' . $state . '&', $redirectUri, 1);
+                } else {
+                    $redirectUri .= '?state=' . $state;
+                }
             }
 
             return [

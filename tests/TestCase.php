@@ -47,7 +47,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
         ])->makePartial();
 
         // prepare defaults
-        $this->user->permit($this->client, ['basic']);
+        $this->user->shouldReceive('hasPermitted')->andReturn(true)->byDefault();
         $this->token->shouldReceive('generate')->andReturn('abc123XYZ')->byDefault();
     }
 
