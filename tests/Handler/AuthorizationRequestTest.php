@@ -163,7 +163,7 @@ class AuthorizationRequestTest extends TestCase
     {
         return [
             ['https://example.com/cb/%CODE%/%STATE%', 'https://example.com/cb/ABC123xyz/abcdef'],
-            ['https://example.com/cb', 'https://example.com/cb', ['code=ABC123xyz','state=abcdef']],
+            ['https://example.com/cb/%CODE%', 'https://example.com/cb/ABC123xyz', ['state=abcdef']],
             ['https://example.com/cb?a=b', 'https://example.com/cb', ['code=ABC123xyz','state=abcdef','a=b']]
         ];
     }

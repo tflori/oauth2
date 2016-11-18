@@ -97,7 +97,7 @@ class Handler
             if (strpos($redirectUri, '%CODE%') !== false) {
                 $redirectUri = str_replace('%CODE%', $authToken, $redirectUri);
             } elseif (strpos($redirectUri, '?') !== false) {
-                $redirectUri = preg_replace('/\?/', '?code=' . $authToken . '&', $redirectUri, 1);
+                $redirectUri = implode('?code=' . $authToken . '&', explode('?', $redirectUri, 2));
             } else {
                 $redirectUri .= '?code=' . $authToken;
             }
@@ -106,7 +106,7 @@ class Handler
                 if (strpos($redirectUri, '%STATE%') !== false) {
                     $redirectUri = str_replace('%STATE%', $state, $redirectUri);
                 } elseif (strpos($redirectUri, '?') !== false) {
-                    $redirectUri = preg_replace('/\?/', '?state=' . $state . '&', $redirectUri, 1);
+                    $redirectUri = implode('?state=' . $state . '&', explode('?', $redirectUri, 2));
                 } else {
                     $redirectUri .= '?state=' . $state;
                 }
@@ -257,5 +257,31 @@ class Handler
         $payload = $this->tokenStorage->get($this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $accessToken);
 
         return $payload && in_array($scope, $payload['scopes']) ? $payload['user'] : null;
+    }
+
+    /**
+     * @param string $sessionId
+     */
+    public function destroySession($sessionId)
+    {
+        $sessionKey = $this->options[self::OPTION_PREFIX_SESSION_TOKENS] . $sessionId;
+
+        if ($authTokens = $this->tokenStorage->get($sessionKey)) {
+            foreach ($authTokens as $authToken) {
+                $authKey = $this->options[self::OPTION_PREFIX_TOKENS] . $authToken;
+
+                if ($tokens = $this->tokenStorage->get($authKey)) {
+                    $this->tokenStorage->delete(
+                        $this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $tokens['accessToken']
+                    );
+                    $this->tokenStorage->delete(
+                        $this->options[self::OPTION_PREFIX_REFRESH_TOKEN] . $tokens['refreshToken']
+                    );
+                    $this->tokenStorage->delete($authKey);
+                }
+            }
+
+            $this->tokenStorage->delete($sessionKey);
+        }
     }
 }
