@@ -12,7 +12,10 @@ class User implements Interfaces\User
      */
     public function permit(Interfaces\Client $client, array $scopes)
     {
-        $this->grants = array_merge($this->grants, $scopes);
+        if (!isset($this->grants[$client->getId()])) {
+            $this->grants[$client->getId()] = [];
+        }
+        $this->grants[$client->getId()] = array_merge($this->grants[$client->getId()], $scopes);
     }
 
     /**
@@ -24,6 +27,7 @@ class User implements Interfaces\User
      */
     public function hasPermitted(Interfaces\Client $client, array $scopes)
     {
-        return count(array_diff($scopes, $this->grants)) === 0;
+        return isset($this->grants[$client->getId()]) &&
+               count(array_diff($scopes, $this->grants[$client->getId()])) === 0;
     }
 }
