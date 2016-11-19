@@ -2,6 +2,9 @@
 
 [![Build Status](https://travis-ci.org/tflori/oauth2.svg?branch=master)](https://travis-ci.org/tflori/oauth2)
 [![Coverage Status](https://coveralls.io/repos/github/tflori/oauth2/badge.svg?branch=master)](https://coveralls.io/github/tflori/oauth2?branch=master)
+[![Latest Stable Version](https://poser.pugx.org/tflori/oauth2/v/stable)](https://packagist.org/packages/tflori/oauth2)
+[![Total Downloads](https://poser.pugx.org/tflori/oauth2/downloads)](https://packagist.org/packages/tflori/oauth2)
+[![License](https://poser.pugx.org/tflori/oauth2/license)](https://packagist.org/packages/tflori/oauth2)
 
 This library helps you to create an oauth service with oauth2 three legged authentication mechanism.
 
