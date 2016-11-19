@@ -248,18 +248,48 @@ class Handler
     }
 
     /**
+     * Checks if authorization is valid for given $scope.
+     *
      * @param $accessToken
      * @param string $scope
-     * @return Interfaces\User|null
+     * @return bool
      */
-    public function getUser($accessToken, $scope = 'basic')
+    public function isAuthorized($accessToken, $scope = 'basic')
     {
         $payload = $this->tokenStorage->get($this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $accessToken);
 
-        return $payload && in_array($scope, $payload['scopes']) ? $payload['user'] : null;
+        if (!$payload) {
+            return false;
+        }
+
+        return in_array($scope, $payload['scopes']);
     }
 
     /**
+     * @param $accessToken
+     * @return Interfaces\User|null
+     */
+    public function getUser($accessToken)
+    {
+        $payload = $this->tokenStorage->get($this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $accessToken);
+
+        return $payload ? $payload['user'] : null;
+    }
+
+    /**
+     * @param $accessToken
+     * @return array|null
+     */
+    public function getScopes($accessToken)
+    {
+        $payload = $this->tokenStorage->get($this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $accessToken);
+
+        return $payload ? $payload['scopes'] : null;
+    }
+
+    /**
+     * Deletes all tokens stored for $sessionId.
+     *
      * @param string $sessionId
      */
     public function destroySession($sessionId)

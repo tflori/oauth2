@@ -113,7 +113,8 @@ When the resource server runs on the same server you can just create a Handler a
 $handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
 
 $accessToken = substr($_SERVER['HTTP_AUTHORIZATION'], strrpos($_SERVER['HTTP_AUTHORIZATION'], ' '));
-if ($user = $handler->getUser($accessToken)) {
+if ($handler->isAuthorized($accessToken, 'this-resource')) {
+    $user = $handler->getUser($accessToken);
     // request the resource and send him data
 } else {
     header('HTTP/1.1 403 Forbidden');
@@ -127,15 +128,31 @@ In this case you need to send a request to the authorization server:
 <?php
 
 $accessToken = substr($_SERVER['HTTP_AUTHORIZATION'], strrpos($_SERVER['HTTP_AUTHORIZATION'], ' '));
-$result = json_decode(file_get_contents('https://auth.example.com/validate.php?access_token=' . $accessToken));
+$result = json_decode(file_get_contents(
+    'https://auth.example.com/validate.php?access_token=' . $accessToken . '&scope=this-resource'
+));
 ```
 
-And on the Authorisation Server run the same as before:
+On the Authorisation Server run the same as before:
 ```php
 <?php
 
 $handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
 
 header('Content-Type: application/json');
-echo json_encode($handler->getUser($_GET['access_token']));
+if (!$handler->isAuthorized($_GET['access_token'], $_GET['scope'])) {
+    echo json_encode(false); // or echo 'false';
+} else {
+    echo json_encode($handler->getUser($_GET['access_token']));
+}
+```
+
+### Logout
+
+When the user logs out every access token for the session should get invalid immediately. Nothing is easier:
+```php
+<?php
+
+$handler = new Oauth2\Handler(new Oauth2\Tests\Fake\Storage());
+$handler->destroySession($_SESSION['oauthId']);
 ```

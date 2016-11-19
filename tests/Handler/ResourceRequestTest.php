@@ -14,37 +14,45 @@ class ResourceRequestTest extends TestCase
         $this->storage->shouldReceive('get')->with('accessToken_' . $this->accessToken)
             ->andReturn([
                 'user' => $this->user,
-                'scopes' => ['basic']
+                'scopes' => ['basic', 'something']
             ])->byDefault();
     }
 
-    public function testGetsDataStoredForAccessToken()
+    public function testIsAuthorizedGetsDataStoredForAccessToken()
     {
         $this->storage->shouldReceive('get')->once()->with('accessToken_' . $this->accessToken)->andReturn(null);
 
-        $this->handler->getUser($this->accessToken);
+        $result = $this->handler->isAuthorized($this->accessToken);
+
+        self::assertFalse($result);
     }
 
-    public function testReturnsNullIfAccessTokenInvalid()
+    public function testIsAuthorizedChecksIfScopeIsValid()
     {
-        $this->storage->shouldReceive('get')->once()->with('accessToken_' . $this->accessToken)->andReturn(null);
-
-        $result = $this->handler->getUser($this->accessToken);
-
-        self::assertSame(null, $result);
+        self::assertTrue($this->handler->isAuthorized($this->accessToken, 'basic'));
+        self::assertTrue($this->handler->isAuthorized($this->accessToken, 'something'));
+        self::assertFalse($this->handler->isAuthorized($this->accessToken, 'nothing'));
     }
 
-    public function testReturnsNullIfScopeIsNotAuthorized()
-    {
-        $result = $this->handler->getUser($this->accessToken, 'special-scope');
-
-        self::assertSame(null, $result);
-    }
-
-    public function testReturnsUser()
+    public function testReturnsTheStoredUser()
     {
         $result = $this->handler->getUser($this->accessToken);
 
         self::assertSame($this->user, $result);
+    }
+
+    public function testReturnsNullIfAccessTokenInvalid()
+    {
+        $this->storage->shouldReceive('get')->twice()->with('accessToken_' . $this->accessToken)->andReturn(null);
+
+        self::assertNull($this->handler->getUser($this->accessToken));
+        self::assertNull($this->handler->getScopes($this->accessToken));
+    }
+
+    public function testReturnsTheAuthorizedScopes()
+    {
+        $result = $this->handler->getScopes($this->accessToken);
+
+        self::assertSame(['basic', 'something'], $result);
     }
 }
