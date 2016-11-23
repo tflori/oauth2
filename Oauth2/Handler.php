@@ -79,7 +79,7 @@ class Handler
             $class     = $this->options[self::OPTION_TOKEN_CLASS];
             $authToken = $class::generate();
 
-            $this->tokenStorage->save($this->options[self::OPTION_PREFIX_AUTH_TOKEN] . $authToken, [
+            $this->tokenStorage->set($this->options[self::OPTION_PREFIX_AUTH_TOKEN] . $authToken, [
                 'client'  => $client,
                 'payload' => [
                     'user'  => $user,
@@ -88,7 +88,7 @@ class Handler
             ], $this->options[self::OPTION_LIFETIME_AUTH_TOKEN]);
 
             $sessionStorageKey = $this->options[self::OPTION_PREFIX_SESSION_TOKENS] . $sessionId;
-            $this->tokenStorage->save(
+            $this->tokenStorage->set(
                 $sessionStorageKey,
                 array_merge($this->tokenStorage->get($sessionStorageKey) ?: [], [$authToken]),
                 0
@@ -155,13 +155,13 @@ class Handler
         $accessToken  = $class::generate();
         $refreshToken = $class::generate();
 
-        $this->tokenStorage->save(
+        $this->tokenStorage->set(
             $this->options[self::OPTION_PREFIX_ACCESS_TOKEN] . $accessToken,
             $payload,
             $this->options[self::OPTION_LIFETIME_ACCESS_TOKEN]
         );
 
-        $this->tokenStorage->save(
+        $this->tokenStorage->set(
             $this->options[self::OPTION_PREFIX_REFRESH_TOKEN] . $refreshToken,
             [
                 'client' => $client,
@@ -171,7 +171,7 @@ class Handler
             $this->options[self::OPTION_LIFETIME_REFRESH_TOKEN]
         );
 
-        $this->tokenStorage->save(
+        $this->tokenStorage->set(
             $this->options[self::OPTION_PREFIX_TOKENS] . $authToken,
             [
                 'accessToken'  => $accessToken,

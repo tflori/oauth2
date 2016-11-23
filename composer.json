@@ -11,6 +11,9 @@
         "php": ">=5.5",
         "tflori/secure-token": "^1.0"
     },
+    "suggest": {
+        "ext-redis": "*"
+    },
     "autoload": {
         "psr-4": {
             "Oauth2\\": "Oauth2/"

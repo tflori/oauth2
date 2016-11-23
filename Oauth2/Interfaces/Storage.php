@@ -19,7 +19,7 @@ interface Storage
      * @param mixed  $value
      * @param int    $ttl Time to live in seconds (null = default; 0 = forever)
      */
-    public function save($key, $value, $ttl = null);
+    public function set($key, $value, $ttl = null);
 
     /**
      * Removes $key from the storage.

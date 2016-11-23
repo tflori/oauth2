@@ -9,7 +9,7 @@ class Storage implements \Oauth2\Interfaces\Storage
         return null;
     }
 
-    public function save($key, $value, $ttl = null)
+    public function set($key, $value, $ttl = null)
     {
     }
 
