@@ -98,7 +98,7 @@ class AuthorizationRequestTest extends TestCase
 
     public function testStoresAuthToken()
     {
-        $this->storage->shouldReceive('save')->once()->with('authToken_ABC123xyz', [
+        $this->storage->shouldReceive('set')->once()->with('authToken_ABC123xyz', [
             'client'  => $this->client,
             'payload' => ['user' => $this->user, 'scopes' => ['basic', 'write-messages']],
         ], 10);
@@ -145,7 +145,7 @@ class AuthorizationRequestTest extends TestCase
 
     public function testGetAuthTokenGrantedStore()
     {
-        $this->storage->shouldReceive('save')->once()
+        $this->storage->shouldReceive('set')->once()
                       ->with('sessionTokens_' . $this->sessionId, ['abc123XYZ', 'ABC123xyz'], 0);
         $this->storage->shouldReceive('get')->once()
                       ->with('sessionTokens_' . $this->sessionId)

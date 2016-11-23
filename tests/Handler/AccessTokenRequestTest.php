@@ -79,7 +79,7 @@ class AccessTokenRequestTest extends TestCase
 
     public function testStoresPayloadForAccessToken()
     {
-        $this->storage->shouldReceive('save')->once()
+        $this->storage->shouldReceive('set')->once()
             ->with('accessToken_XYZ321abc', $this->payload, 300);
 
         $this->handler->getAccessToken($this->clientId, $this->clientSecret, $this->authToken);
@@ -87,7 +87,7 @@ class AccessTokenRequestTest extends TestCase
 
     public function testStoresRefreshToken()
     {
-        $this->storage->shouldReceive('save')->once()
+        $this->storage->shouldReceive('set')->once()
                       ->with('refreshToken_ABC123xyz', [
                           'client' => $this->client,
                           'payload' => $this->payload,
@@ -99,7 +99,7 @@ class AccessTokenRequestTest extends TestCase
 
     public function testStoresTokensForAuthToken()
     {
-        $this->storage->shouldReceive('save')->once()
+        $this->storage->shouldReceive('set')->once()
                       ->with('tokens_' . $this->authToken, [
                           'accessToken' => 'XYZ321abc',
                           'refreshToken' => 'ABC123xyz'
