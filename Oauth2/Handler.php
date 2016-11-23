@@ -41,7 +41,7 @@ class Handler
      * @param Interfaces\Storage $tokenStorage
      * @param array $options
      */
-    public function __construct(Interfaces\Storage $tokenStorage, array $options = null)
+    public function __construct($tokenStorage, array $options = null)
     {
         $this->tokenStorage = $tokenStorage;
         $this->options      = array_merge($this->options, $options ?: []);
